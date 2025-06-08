@@ -287,7 +287,10 @@ export function ResultStep() {
   }
 
   const handleStartOver = () => {
-    resetPlanData()
+    resetPlanData();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('travel-planner-storage');
+    }
   }
 
   const handleDownloadCalendar = () => {
@@ -466,7 +469,7 @@ export function ResultStep() {
         <div className="flex gap-4 h-[800px] w-full">
           {/* 왼쪽: AI 추천 일정 */}
           <div className={`transition-all duration-300 ease-in-out ${
-            isLeftPanelOpen ? 'w-1/2 opacity-100' : 'w-0 opacity-0 overflow-hidden'
+            isLeftPanelOpen ? 'w-1/2 opacity-100 h-full' : 'w-0 opacity-0 overflow-hidden'
           }`}>
             {isLeftPanelOpen && (
               <Card className="h-full">
@@ -889,9 +892,7 @@ export function ResultStep() {
           </div>
 
           {/* 오른쪽: 카카오 지도 */}
-          <div className={`transition-all duration-300 ease-in-out ${
-            isLeftPanelOpen ? 'flex-1' : 'w-full'
-          }`}>
+          <div className={`transition-all duration-300 ease-in-out flex-1 h-full`}>
             <Card className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between text-gray-900">
@@ -908,31 +909,21 @@ export function ResultStep() {
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
-                {showMap ? (
-                  <div className="relative bg-gray-100">
-                    <KakaoMap
-                      center={mapCenter}
-                      markers={mapMarkers}
-                      height="720px"
-                      level={5}
-                      className="w-full"
-                    />
-                    <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded px-3 py-2 shadow-lg">
-                      <p className="text-xs text-gray-700">
-                        💡 지도의 마커를 클릭하면 더 자세한 정보를 볼 수 있습니다.
-                      </p>
-                    </div>
+              <CardContent className="p-0 h-full">
+                <div className="relative bg-gray-100 rounded-b-lg overflow-hidden h-full">
+                  <KakaoMap
+                    center={mapCenter}
+                    markers={mapMarkers}
+                    height="100%"
+                    level={5}
+                    className="w-full h-full"
+                  />
+                  <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded px-3 py-2 shadow-lg">
+                    <p className="text-xs text-gray-700">
+                      💡 지도의 마커를 클릭하면 더 자세한 정보를 볼 수 있습니다.
+                    </p>
                   </div>
-                ) : (
-                  <div className="h-[720px] flex items-center justify-center bg-gray-50">
-                    <div className="text-center text-gray-500">
-                      <Map className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p className="font-medium">지도가 숨겨져 있습니다</p>
-                      <p className="text-sm mt-1">위의 "지도 보기" 버튼을 클릭하여 지도를 표시하세요</p>
-                    </div>
-                  </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </div>

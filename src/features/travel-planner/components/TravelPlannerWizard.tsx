@@ -29,7 +29,8 @@ export function TravelPlannerWizard() {
   // 단계 변경 디버깅
   useEffect(() => {
     if (isHydrated) {
-      console.log(`Current step: ${displayStep}`)
+      console.log(`🎯 Current step: ${displayStep}`)
+      console.log(`🗺️ KakaoMap will render in step 8-9 (ResultStep)`)
     }
   }, [displayStep, isHydrated])
 
@@ -48,6 +49,12 @@ export function TravelPlannerWizard() {
     if (window.confirm('모든 입력 정보가 초기화됩니다. 계속하시겠습니까?')) {
       setCurrentStep(1)
     }
+  }
+
+  // 🔧 임시 디버깅: 8단계로 바로 이동
+  const handleJumpToResults = () => {
+    console.log('🚀 점프: 8단계(ResultStep)로 이동')
+    setCurrentStep(8)
   }
 
   // 현재 단계에 맞는 컴포넌트 렌더링
@@ -85,6 +92,28 @@ export function TravelPlannerWizard() {
   
   return (
     <div>
+      {/* 🔧 임시 디버깅 패널 */}
+      <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <h3 className="text-sm font-semibold text-yellow-800 mb-2">🔧 디버깅 패널</h3>
+        <p className="text-sm text-yellow-700 mb-2">현재 단계: {displayStep} / 8</p>
+        <p className="text-sm text-yellow-600 mb-3">지도는 8단계(ResultStep)에서 표시됩니다.</p>
+        <Button 
+          onClick={handleJumpToResults}
+          size="sm"
+          variant="outline"
+          className="mr-2"
+        >
+          🗺️ 8단계로 점프 (지도 테스트)
+        </Button>
+        <Button 
+          onClick={handleReset}
+          size="sm"
+          variant="outline"
+        >
+          🔄 1단계로 리셋
+        </Button>
+      </div>
+
       {renderStepComponent()}
       
       {isHydrated && displayStep > 1 && displayStep < 8 && (

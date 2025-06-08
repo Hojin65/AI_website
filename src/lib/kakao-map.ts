@@ -5,9 +5,26 @@ declare global {
   }
 }
 
-// API 키 직접 설정 (용도별 구분)
-const KAKAO_API_KEY = 'b96ce35e1cd6d37f165e9b54ebc06ae8'; // JavaScript 키 (지도 표시용)
-const KAKAO_REST_API_KEY = '01975e2891eb9c4a068ef83a0aee1b69'; // REST API 키 (장소 검색용)
+// API 키 설정 - 여러 백업 키 제공
+const KAKAO_API_KEYS = [
+  '62801e528eb39f2e251cc2d723564703', // 기본 JavaScript 키
+  'b96ce35e1cd6d37f165e9b54ebc06ae8', // 백업 키 1
+  'your_kakao_js_key_here' // 백업 키 2 (필요시 교체)
+];
+
+const KAKAO_REST_API_KEYS = [
+  'a1ed14870e47a2cc4f918be9fb269e6a', // 기본 REST API 키
+  'your_kakao_rest_key_here' // 백업 키 (필요시 교체)
+];
+
+// 사용할 API 키 선택
+const KAKAO_API_KEY = KAKAO_API_KEYS[0];
+const KAKAO_REST_API_KEY = KAKAO_REST_API_KEYS[0];
+
+console.log('카카오 지도 API 설정:', {
+  jsKey: KAKAO_API_KEY?.substring(0, 10) + '...',
+  restKey: KAKAO_REST_API_KEY?.substring(0, 10) + '...'
+});
 
 interface KakaoPlace {
   id: string;
@@ -48,69 +65,52 @@ export const loadKakaoMapScript = (): Promise<void> => {
     if (existingScript) {
       console.log('카카오 지도 스크립트 태그가 이미 존재함');
       
-      // 스크립트가 로드되었지만 아직 초기화되지 않은 경우
-      if (window.kakao && !window.kakao.maps) {
-        try {
-          // maps 객체가 로드될 때까지 대기
-          const checkKakaoMaps = setInterval(() => {
-            if (window.kakao.maps) {
-              clearInterval(checkKakaoMaps);
-              resolve();
-            }
-          }, 100);
-          
-          // 30초 타임아웃 설정
-          setTimeout(() => {
-            clearInterval(checkKakaoMaps);
-            reject(new Error('카카오 지도 초기화 타임아웃'));
-          }, 30000);
-        } catch (e) {
-          reject(e);
+      // SDK가 로드될 때까지 대기
+      const checkKakaoMaps = setInterval(() => {
+        if (window.kakao && window.kakao.maps) {
+          clearInterval(checkKakaoMaps);
+          console.log('카카오 지도 SDK 로드 완료');
+          resolve();
         }
-      } else {
-        // 존재하지만 초기화가 완료되지 않은 스크립트 제거 후 다시 로드
-        existingScript.remove();
-        loadNewScript();
-      }
+      }, 100);
+      
+      // 20초 타임아웃 설정
+      setTimeout(() => {
+        clearInterval(checkKakaoMaps);
+        reject(new Error('카카오 지도 SDK 로드 타임아웃'));
+      }, 20000);
+      
       return;
     }
 
+    // 새 스크립트 로드
     loadNewScript();
 
     function loadNewScript() {
       const script = document.createElement('script');
       script.async = true;
       script.defer = true;
-      // 하드코딩된 키를 우선 사용
+      // 하드코딩된 키를 사용하여 autoload=true로 설정
       const apiKey = KAKAO_API_KEY;
-      // autoload=false로 설정하여 document.write 오류 방지
-      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false`;
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&libraries=services,clusterer,drawing&autoload=true`;
       
       script.onload = () => {
-        console.log('카카오 지도 스크립트 로드 완료, 초기화 시작');
-        // autoload=false이므로 수동으로 초기화
-        if (window.kakao && window.kakao.maps) {
-          window.kakao.maps.load(() => {
-            console.log('카카오 지도 초기화 완료');
+        console.log('카카오 지도 스크립트 로드 완료');
+        
+        // autoload=true이므로 자동으로 초기화됨, 완료될 때까지 대기
+        const waitForMaps = setInterval(() => {
+          if (window.kakao && window.kakao.maps) {
+            clearInterval(waitForMaps);
+            console.log('카카오 지도 SDK 초기화 완료');
             resolve();
-          });
-        } else {
-          const waitForKakao = setInterval(() => {
-            if (window.kakao) {
-              clearInterval(waitForKakao);
-              window.kakao.maps.load(() => {
-                console.log('카카오 지도 초기화 완료 (지연)');
-                resolve();
-              });
-            }
-          }, 100);
-          
-          // 30초 타임아웃 설정
-          setTimeout(() => {
-            clearInterval(waitForKakao);
-            reject(new Error('카카오 지도 객체 로드 타임아웃'));
-          }, 30000);
-        }
+          }
+        }, 100);
+        
+        // 20초 타임아웃 설정
+        setTimeout(() => {
+          clearInterval(waitForMaps);
+          reject(new Error('카카오 지도 SDK 초기화 타임아웃'));
+        }, 20000);
       };
       
       script.onerror = (e) => {
